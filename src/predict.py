@@ -1,21 +1,25 @@
 import pickle
 import numpy as np
 from deepface import DeepFace
-import cv2
 
-def predict_image(img_path, threshold=0.70):
+def predict_image(img_path, threshold=0.65): # <-- Lowered threshold slightly for multi-class
     # Load model and encoder
-    with open("models/face_classifier.pkl", "rb") as f:
-        clf = pickle.load(f)
-    with open("models/label_encoder.pkl", "rb") as f:
-        le = pickle.load(f)
+    try:
+        with open("models/face_classifier.pkl", "rb") as f:
+            clf = pickle.load(f)
+        with open("models/label_encoder.pkl", "rb") as f:
+            le = pickle.load(f)
+    except FileNotFoundError:
+        print("❌ Error: Model files not found. Train the model first.")
+        return
 
     try:
-        # Extract embedding from test image
+        # Extract embedding from test image using RetinaFace
         embedding_objs = DeepFace.represent(
             img_path=img_path, 
             model_name="Facenet", 
-            enforce_detection=True
+            enforce_detection=True,
+            detector_backend="retinaface"
         )
         embedding = np.array(embedding_objs[0]["embedding"]).reshape(1, -1)
 
@@ -23,12 +27,18 @@ def predict_image(img_path, threshold=0.70):
         probs = clf.predict_proba(embedding)[0]
         max_prob = np.max(probs)
         best_class_idx = np.argmax(probs)
+        
+        # Get the actual predicted name from the Label Encoder
+        predicted_name = le.inverse_transform([best_class_idx])[0]
 
-        # Apply threshold logic for Unknown faces
+        # Apply our Two-Layer Security Logic
         if max_prob < threshold:
-            prediction = "Unknown Person"
+            prediction = "Unknown Person (Rejected by Threshold)"
+        elif predicted_name == "unknown":
+            # If it matched the 'unknown' folder dataset
+            prediction = "Unknown Person (Recognized as Stranger)"
         else:
-            prediction = le.inverse_transform([best_class_idx])[0]
+            prediction = predicted_name
 
         print(f"\n--- Results for {img_path} ---")
         print(f"Prediction: {prediction}")
@@ -37,11 +47,11 @@ def predict_image(img_path, threshold=0.70):
         return prediction, max_prob
 
     except ValueError:
-        print(f"Error: No face detected in {img_path}.")
+        print(f"⚠️ Error: No face detected in {img_path}.")
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"❌ An error occurred: {e}")
 
 if __name__ == "__main__":
-    # Test it out! Make sure you put a picture of yourself in the test_images folder.
-    test_img = "test_images/test1.jpg"
+    # Test it out!
+    test_img = "test_images/brad-test.jpeg"
     predict_image(test_img)
