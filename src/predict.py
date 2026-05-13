@@ -2,7 +2,7 @@ import pickle
 import numpy as np
 from deepface import DeepFace
 
-def predict_image(img_path, threshold=0.65): # <-- Lowered threshold slightly for multi-class
+def predict_image(img_path, threshold=0.65): 
     # Load model and encoder
     try:
         with open("models/face_classifier.pkl", "rb") as f:
@@ -52,6 +52,5 @@ def predict_image(img_path, threshold=0.65): # <-- Lowered threshold slightly fo
         print(f"❌ An error occurred: {e}")
 
 if __name__ == "__main__":
-    # Test it out!
-    test_img = "test_images/brad-test.jpeg"
+    test_img = "test_images/random-person2.jpeg"
     predict_image(test_img)

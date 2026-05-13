@@ -28,7 +28,7 @@ def generate_embeddings(dataset_path="dataset", model_name="Facenet"):
                 img_path=img_path, 
                 model_name=model_name, 
                 enforce_detection=True,
-                detector_backend="retinaface"  # <--- CRITICAL CHANGE: Keep it consistent with RetinaFace
+                detector_backend="retinaface" 
             )
             
             # We take the first face found in the image
